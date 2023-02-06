@@ -29,6 +29,30 @@
         }
     }
 
+    function createToDoItem(name){
+        let item = document.createElement('li')
+        let buttonGroup = document.createElement('div')
+        let doneButton = document.createElement('button')
+        let deleteButton = document.createElement('button')
+
+        item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-item-center')
+        item.textContent = name
+        buttonGroup.classList.add('btn-group', 'btn-group-sm')
+        doneButton.classList.add('btn', 'btn-success')
+        doneButton.textContent = 'done'
+        deleteButton.classList.add('btn', 'btn-danger')
+        deleteButton.textContent = 'delete'
+
+        buttonGroup.append(doneButton, deleteButton)
+        item.append(buttonGroup)
+
+        return {
+            item,
+            doneButton,
+            deleteButton
+        }
+    }
+
     function createToDoList(){
         let list = document.createElement('ul')
         list.classList.add('list-group')
@@ -44,5 +68,28 @@
 
         container.append(appTitle)
         container.append(appTitle, toDoItemForm.form, toDoList)
+
+        toDoItemForm.form.addEventListener('submit', (e) => {
+            e.preventDefault()
+
+            if(!toDoItemForm.input.value){
+                return
+            }
+
+            currentItem = createToDoItem(toDoItemForm.input.value)
+
+            currentItem.doneButton.addEventListener('click', ()=>{
+                currentItem.item.classList.toggle('list-group-item-success')
+            })
+            currentItem.deleteButton.addEventListener('click', ()=>{
+                if(confirm('do you want remove this task?')){
+                    currentItem.item.remove()
+                }
+            })
+
+            toDoList.append(currentItem.item)
+
+            toDoItemForm.input.value = ''
+        })
     })
 })()
