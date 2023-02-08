@@ -60,51 +60,61 @@
     }
 
     function addToLocalStorage(name, task) {
-        currentTasks = localStorage.getItem(name) ? localStorage.getItem(name) + ';' : ''
-        localStorage.setItem(name, currentTasks + task)
+        currentTasks = localStorage.getItem(name) ? JSON.parse(localStorage.getItem(name)) : []
+        localStorage.setItem(name, JSON.stringify(currentTasks.concat([task])))
     }
 
     function getFromLocalStorage(name) {
-        currentTasks = localStorage.getItem(name) ? localStorage.getItem(name).split(';') : []
+        currentTasks = localStorage.getItem(name) ? JSON.parse(localStorage.getItem(name)) : []
         return currentTasks
     }
 
     function removeFromeLocalStorage(name, newTasks) {
         localStorage.removeItem(name)
-        localStorage.setItem(name, newTasks)
+        localStorage.setItem(name, JSON.stringify(newTasks))
     }
 
-    function addTask(task, parent, mainParentId) {
-        currentItem = createToDoItem(task)
+    function addTask(task, parent, toDoWrapperId) {
+        currentItem = createToDoItem(task.task)
 
         currentItem.doneButton.addEventListener('click', () => {
-            currentItem.item.classList.toggle('list-group-item-success')
+            removeFromeLocalStorage(toDoWrapperId, getFromLocalStorage(toDoWrapperId).map((el) => {
+                if (el.id == task.id) {
+                    el.done = true
+                    return el
+                }
+                return el
+            }))
+            updateTasks(parent, toDoWrapperId)
         })
         currentItem.deleteButton.addEventListener('click', () => {
             if (confirm('do you want remove this task?')) {
-                removeFromeLocalStorage(mainParentId, getFromLocalStorage(mainParentId).filter((item) => {
-                    return item !== task
-                }).join(';'))
-                updateTasks(parent, mainParentId)
+                removeFromeLocalStorage(toDoWrapperId, getFromLocalStorage(toDoWrapperId).filter((el) => {
+                    return el.id !== task.id
+                }))
+                updateTasks(parent, toDoWrapperId)
             }
         })
+
+        if(task.done){
+            currentItem.item.classList.add('list-group-item-success')
+        }
 
         parent.append(currentItem.item)
     }
 
-    function updateTasks(parent, mainParentId) {
+    function updateTasks(parent, toDoWrapperId) {
         parent.innerHTML = ''
-        tasks = getFromLocalStorage(mainParentId)
+        tasks = getFromLocalStorage(toDoWrapperId)
         if (tasks.length !== 0) {
             for (let task in tasks) {
-                addTask(tasks[task], parent, mainParentId)
-                console.log('i work', task, tasks)
+                addTask(tasks[task], parent, toDoWrapperId)
             }
         }
     }
 
-    function createToDo(parentId, name) {
-        let container = document.getElementById(parentId)
+    function createToDo(toDoWrapperId, name) {
+        let container = document.getElementById(toDoWrapperId)
 
         appTitle = createAppTitle(name)
         toDoItemForm = createToDoItemForm()
@@ -114,19 +124,22 @@
         container.append(appTitle, toDoItemForm.form, toDoList)
 
         toDoItemForm.form.addEventListener('submit', (e) => {
+            let id = localStorage.getItem('id') ? Number(localStorage.getItem('id')) + 1 : 1
+            localStorage.setItem('id', id)
+
             e.preventDefault()
 
             if (!toDoItemForm.input.value) {
                 return
             }
 
-            addToLocalStorage(parentId, toDoItemForm.input.value)
+            let taskObject = {id: id, done: false, task: toDoItemForm.input.value}
 
-            addTask(toDoItemForm.input.value, toDoList, parentId)
-
+            addToLocalStorage(toDoWrapperId, taskObject)
+            addTask(taskObject, toDoList, toDoWrapperId)
             toDoItemForm.input.value = ''
         })
-        updateTasks(toDoList, parentId)
+        updateTasks(toDoList, toDoWrapperId)
     }
 
     window.createToDo = createToDo
